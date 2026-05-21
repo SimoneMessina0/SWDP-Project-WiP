@@ -83,6 +83,7 @@ static AppState current_state = STATE_IDLE;
 uint8_t usb_flag = 0;
 
 // IMU data structures for accelerometer and gyroscope.
+
 static IMU_Data accelerometer_data;
 static IMU_Data gyroscope_data;
 
