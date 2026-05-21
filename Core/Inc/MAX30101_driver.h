@@ -3,7 +3,7 @@
 
 /**
  * \file imu_driver.h
- * \brief Driver library for the MAX30101 IMU sensor.
+ * \brief Driver library for the MAX30101 sensor.
  *
  * This header file provides the public interface for controlling the
  * MAX30101, including configuration and data reading functions.
@@ -14,8 +14,8 @@
 #include <stdint.h>
 
 // I2C Addresses
-#define MAX30101_WRITE_ADDRESS  0xAF
-#define MAX3010_READ_ADDRESS    0xAE
+#define MAX30101_WRITE_ADDRESS  0xAE
+#define MAX3010_READ_ADDRESS    0xAF //Scod: read era AE e write era AF, li ho invertiti
 #define MAX30101_TIMEOUT        100
 // --- Register Configuration Values ---
 // Interrupt Registers
@@ -27,6 +27,7 @@
 #define FIFO_WRITE_PTR          0x04
 #define FIFO_READ_PTR           0x06
 #define FIFO_DATA_REG           0x07
+#define OVF_COUNTER             0x05 //Scod: ho aggiunto questo che serve per il reset
 // Configuration Registers
 #define FIFO_CONFIGURATION      0x08
 #define MODE_CONFIGURATION      0x09
@@ -68,6 +69,6 @@ void MAX30101_LED_Config(uint8_t[4] led_pa, uint8_t[2] multi_led);
  * @param acc_data Pointer to an HEALTH_data struct where the results will be stored.
  * @param read_ptr Pointer to last read position of FIFO
  */
-void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr);
+void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr); //Scod: read_ptr in teoria non necessario visto che il puntatore cambia da solo
 
 #endif /* __MAX30101_DRIVER_H__ */
