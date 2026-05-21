@@ -14,8 +14,8 @@
 #include <stdint.h>
 
 // I2C Addresses
-#define MAX30101_WRITE_ADDRESS  0xAF
-#define MAX3010_READ_ADDRESS    0xAE
+#define MAX30101_WRITE_ADDRESS  0xAF >> 1
+#define MAX3010_READ_ADDRESS    0xAE >> 1 // 0xAE >> 1 and 0xAF >> 1 are the same address
 #define MAX30101_TIMEOUT        100
 // --- Register Configuration Values ---
 // Interrupt Registers
