@@ -39,7 +39,7 @@ uint8_t MAX30101_Init(void) {
  * @param mode_conf Configures sensor mode (HR/SpO2/Both).
  * @param spo2_conf Configures SPO2 settings.
  */
-void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_conf);
+void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_conf){
     // Combine ODR and FS into a single value for CTRL1_XL register
 
     sensor_write_register(FIFO_CONFIGURATION, fifo_conf);
@@ -52,7 +52,7 @@ void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_con
  * @param led_pa Configures LEDs pulse amplitude settings
  * @param multi_led Configures LEDs turn on-off stages 
  */
-void MAX30101_LED_Config(uint8_t[4] led_pa, uint8_t[2] multi_led);
+void MAX30101_LED_Config(uint8_t[4] led_pa, uint8_t[2] multi_led){
     for(int i = 0; i < 4; i++)
     {
         sensor_write_register((LED_PULSE_AMP + i), led_pa[i]);
@@ -68,7 +68,7 @@ void MAX30101_LED_Config(uint8_t[4] led_pa, uint8_t[2] multi_led);
  * @param acc_data Pointer to an HEALTH_data struct where the results will be stored.
  * @param read_ptr Pointer to last read position of FIFO
  */
-void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr);
+void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr){
     //uint8_t raw_data[6]; // Buffer to hold 6 bytes for X, Y, Z axes
     int16_t x_raw, y_raw, z_raw;
     float sensitivity;
