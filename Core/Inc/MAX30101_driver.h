@@ -38,12 +38,13 @@
 
 // --- Data Structures ---
 // Width and Length of registers
-#define NUMBER_OF_LEDS  4
+#define NUMBER_OF_ACTIVE_LEDS  2
 #define LED_PULSE_N_REG 4
 #define MULTI_LED_N_REG 2
 #define MAX_BYTES_READ 12
 // This structure is used to store the Health data from MAX30101
 typedef uint32_t HEALTH_data;
+
 
 // --- Public Function Prototypes ---
 // The main API for the MAX30101 driver.
@@ -77,8 +78,9 @@ void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULT
 /**
  * @brief Reads the raw and converted accelerometer data.
  * @param acc_data Pointer to an HEALTH_data struct where the results will be stored.
+ * @param raw_data Pointer to an array used to store raw HEALTH data
  * @param read_ptr Pointer to last read position of FIFO
  */
-void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr, uint8_t active_leds); //Scod: read_ptr in teoria non necessario visto che il puntatore cambia da solo
+void MAX30101_Read_Data(HEALTH_data **acc_data, uint8_t *raw_data, uint8_t *read_ptr); //Scod: read_ptr in teoria non necessario visto che il puntatore cambia da solo
 
 #endif /* __MAX30101_DRIVER_H__ */

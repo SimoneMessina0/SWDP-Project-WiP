@@ -48,7 +48,8 @@ void MAX30101_Reset(void){
  */
 void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_conf){
     // Combine ODR and FS into a single value for CTRL1_XL register
-
+    sensor_write_register(INTERRUPT_ENABLE_1, 0);
+    sensor_write_register(INTERRUPT_ENABLE_2, 0);
     sensor_write_register(FIFO_CONFIGURATION, fifo_conf);
     sensor_write_register(MODE_CONFIGURATION, mode_conf);
     sensor_write_register(SPO2_CONFIGURATION, spo2_conf);
@@ -59,7 +60,7 @@ void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_con
  * @param led_pa Configures LEDs pulse amplitude settings
  * @param multi_led Configures LEDs turn on-off stages 
  */
-void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULTI_LED_N_REG]){
+void MAX30101_LED_Config(uint8_t *led_pa, uint8_t *multi_led){
     for(int i = 0; i < LED_PULSE_N_REG; i++)
     {
         sensor_write_register((LED_PULSE_AMP + i), led_pa[i]);
@@ -73,31 +74,33 @@ void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULT
 /**
  * @brief Reads the raw and converted accelerometer data.
  * @param acc_data Pointer to an HEALTH_data struct where the results will be stored.
+ * @param raw_data Pointer to an array used to store raw HEALTH data
  * @param read_ptr Pointer to last read position of FIFO
  */
-void MAX30101_Read_Data(HEALTH_data **acc_data, uint8_t read_ptr, uint8_t active_leds){
+void MAX30101_Read_Data(HEALTH_data **acc_data, uint8_t *raw_data, uint8_t *read_ptr){
 
-    uint8_t     write_ptr, local_ptr;
+    uint8_t     write_ptr;
     uint8_t     available_samples;
-    uint8_t     temp[3 * NUMBER_OF_LEDS];
+    uint8_t     local_ptr = *read_ptr;
+
 
     sensor_read_register(FIFO_WRITE_PTR, &write_ptr, 1);
-    if (write_ptr >= read_ptr)
-        available_samples = write_ptr - read_ptr;
+    if (write_ptr >= local_ptr)
+        available_samples = write_ptr - local_ptr;
     else 
-        available_samples = 32 - read_ptr + write_ptr;
+        available_samples = 32 - local_ptr + write_ptr;
 
-    local_ptr = read_ptr;
     for (uint8_t i = 0; i < available_samples; i++){
-        sensor_read_register(FIFO_DATA_REG, temp, 3* active_leds);
-        for (uint8_t j = 0; j < active_leds; j++){
-            acc_data[j][local_ptr] = temp[0 + 3 * j] << 16 | temp[1 + 3 * j] << 8 | temp[2 + 3 * j];
+        sensor_read_register(FIFO_DATA_REG, raw_data, 3* NUMBER_OF_ACTIVE_LEDS);
+        for (uint8_t j = 0; j < NUMBER_OF_ACTIVE_LEDS; j++){
+            acc_data[j][local_ptr] = raw_data[0 + 3 * j] << 16 | raw_data[1 + 3 * j] << 8 | raw_data[2 + 3 * j];
         }
 
         local_ptr++;
         if (local_ptr == 32)
             local_ptr = 0;
     }
+    *read_ptr = local_ptr;
 }
 
 
