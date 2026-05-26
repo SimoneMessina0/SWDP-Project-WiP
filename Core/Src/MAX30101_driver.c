@@ -1,11 +1,3 @@
-/**
- * \file imu_driver.c
- * \brief Implementation file for the LSM6DSO16IS IMU driver.
- *
- * This file contains the low-level functions for communicating with the IMU
- * sensor via I2C, including register reads/writes and data processing.
- */
-
 #include "MAX30101_driver.h"
 #include "main.h"
 #include "string.h"
@@ -77,7 +69,7 @@ void MAX30101_LED_Config(uint8_t *led_pa, uint8_t *multi_led){
  * @param raw_data Pointer to an array used to store raw HEALTH data
  * @param read_ptr Pointer to last read position of FIFO
  */
-void MAX30101_Read_Data(HEALTH_data **acc_data, uint8_t *raw_data, uint8_t *read_ptr){
+void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *read_ptr){
 
     uint8_t     write_ptr;
     uint8_t     available_samples;
@@ -118,10 +110,10 @@ void MAX30101_Read_Data(HEALTH_data **acc_data, uint8_t *raw_data, uint8_t *read
 static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len) {
     // Send the register address to the Sensor to prepare for reading.
     // This is a two-step process in I2C: first a write, then a read.
-    if (HAL_I2C_Master_Transmit(&hi2c3, MAX3010_READ_ADDRESS, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
+    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_READ_ADDRESS, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }
-    if (HAL_I2C_Master_Receive(&hi2c3, MAX3010_READ_ADDRESS, data, data_len, MAX30101_TIMEOUT) != HAL_OK) {
+    if (HAL_I2C_Master_Receive(&hi2c3, MAX30101_READ_ADDRESS, data, data_len, MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }
     return 1; // Success

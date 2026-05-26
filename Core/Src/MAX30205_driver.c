@@ -1,17 +1,24 @@
-#include "max30205.h"
+#include "MAX30205_driver.h"
+#include "main.h"
+#include "string.h"
+#include "stdio.h"
+#include <stdint.h>
+
+extern I2C_HandleTypeDef hi2c3;
+
+// --- Private Function Prototypes (Helper Functions) ---
+// These functions are only used internally by the driver
+static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len);
+static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data);
+
+// --- Public Function Implementations ---
 
 /**
  * @brief Initializes the MAX30205 sensor in its Power-On Reset Value.
  */
-uint8_t MAX30205_Init(I2C_HandleTypeDef *hi2c) { //The i2c address must be given in the main.c
-    // Writes 0x00 in the configuration register to ensure the sensor is active and in normal mode,
-    // that is setting all the bits from D0 to D7 to 0.
+void MAX30205_Init() { 
     uint8_t config_value = 0x00; 
-    if (HAL_I2C_Mem_Write(hi2c, MAX30205_I2C_ADDR, MAX30205_CONFIGURATION, 1, &config_value, 1, 100) != HAL_OK) {
-        return 0; // Communication errorConfigures the accelerometer with specified ODR, Full Scale, and performance mode.
-    }
-    
-    return 1; // Success
+    sensor_write_register(MAX30205_I2C_ADDR, config_value);
 }
 
 /**
@@ -20,15 +27,37 @@ uint8_t MAX30205_Init(I2C_HandleTypeDef *hi2c) { //The i2c address must be given
 void MAX30205_Read_Temp(I2C_HandleTypeDef *hi2c, float *temperature) {
     uint8_t buffer[2]; // array to hold the 2 bytes read from the temperature register
     int16_t raw_temp; // variable to hold the combined 16-bit raw temperature value. Signed because the temperature can be negative.
-    
-    // Reads the temperature data from the MAX30205. 
-    // Interrogates the sensor at the ADDR 
-    HAL_I2C_Mem_Read(hi2c, MAX30205_I2C_ADDR, MAX30205_TEMPERATURE, 1, buffer, 2, 100);
-    
-    // Reconstruction of the 16-bit raw temperature value from the two bytes read (buffer):
-    // Shifts by 8 bits the first byte (MSB) to the left and performs a bitwise OR with the second byte (LSB) to combine them into a single 16-bit value.
+
+    sensor_read_register(MAX30205_I2C_ADDR, buffer, 2);
     raw_temp = (int16_t)((buffer[0] << 8) | buffer[1]);
 
     // Conversion of the raw temperature value to degrees Celsius, according to the datasheet:
     *temperature = (float)raw_temp * 0.00390625f; // Each bit corresponds to 0.00390625 °C (1/256 °C)
+}
+
+static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len) {
+    // Send the register address to the Sensor to prepare for reading.
+    // This is a two-step process in I2C: first a write, then a read.
+    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30205_I2C_ADDR << 1, &reg_addr, 1, MAX30205_TIMEOUT) != HAL_OK) {
+        return 0; // Communication error
+    }
+    if (HAL_I2C_Master_Receive(&hi2c3, MAX30205_I2C_ADDR << 1, data, data_len, MAX30205_TIMEOUT) != HAL_OK) {
+        return 0; // Communication error
+    }
+    return 1; // Success
+}
+
+/**
+ * @brief Writes a single byte of data to a specific register on the IMU via I2C.
+ *
+ * @param reg_addr The address of the register to write to.
+ * @param reg_data The byte of data to write.
+ * @return 1 on success, 0 on I2C communication error.
+ */
+static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data) {
+    uint8_t tx_buffer[] = {reg_addr, reg_data};
+    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30205_I2C_ADDR << 1, tx_buffer, sizeof(tx_buffer), MAX30205_TIMEOUT) != HAL_OK) {
+        return 0; // Communication error
+    }
+    return 1; // Success
 }
