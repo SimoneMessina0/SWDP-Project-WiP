@@ -2,7 +2,7 @@
 #define __MAX30205_DRIVER_H__
 
 /**
- * \file imu_driver.h
+ * \file MAX30205_driver.h
  * \brief Driver library for the MAX30205 IMU sensor.
  *
  * This header file provides the public interface for controlling the
@@ -11,13 +11,13 @@
 
 #include "stdint.h"
 #include "main.h"
-#include "stm32u5xx_hal.h"
+#include <stdint.h>
 
 // --- I2C Communication Settings ---
 // The I2C slave address of the MAX30205 is 0x6B (7-bit format).
 // This is the address to be used with the HAL library functions.
 #define MAX30205_I2C_ADDR 0x90 
-#define IMU_I2C_TIMEOUT   100 // Timeout in milliseconds for I2C operations (lo teniamo?)
+#define MAX30205_TIMEOUT   100 // Timeout in milliseconds for I2C operations (lo teniamo?)
 
 // --- Register Addresses ---
 // These are the addresses of the key registers used to configure and read the MAX30205.
@@ -38,13 +38,13 @@
  * @brief Initializes the MAX30205 sensor.
  * @return 1 on success, 0 on failure.
  */
-uint8_t MAX30205_Init(I2C_HandleTypeDef *hi2c)
+void MAX30205_Init();
 
 /**
  * @brief Extracts the clinical temperature from the sensor and converts it to degrees Celsius.
  * @param hi2c Pointer to the I2C handle used for communication with the sensor
  * @param temperature Pointer to a float variable where the read temperature value will be stored in degrees Celsius.
  */
-void MAX30205_Read_Temp(I2C_HandleTypeDef *hi2c, float *temperature)
+void MAX30205_Read_Temp(I2C_HandleTypeDef *hi2c, float *temperature);
 
 #endif /* __MAX30205_DRIVER_H__ */
