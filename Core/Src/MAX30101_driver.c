@@ -10,6 +10,7 @@
 #include "main.h"
 #include "string.h"
 #include "stdio.h"
+#include <stdint.h>
 
 extern I2C_HandleTypeDef hi2c3;
 
@@ -27,10 +28,16 @@ static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data);
 uint8_t MAX30101_Init(void) {
     uint8_t pwr_rdy_value = 0;
     // Read the WHO_AM_I register and check if the returned value matches the expected one
-    if (sensor_read_register(INTERRUPT_STATUS, &pwr_rdy_value, 1) && (INTERRUPT_STATUS_1 & 1)) {
+    if (sensor_read_register(INTERRUPT_STATUS_1, &pwr_rdy_value, 1) && (pwr_rdy_value & 1)) {
         return 1; // Success
     }
     return 0; // Failure
+}
+
+void MAX30101_Reset(void){
+    sensor_write_register(FIFO_WRITE_PTR, 0);
+    sensor_write_register(FIFO_OVF_COUNTER, 0);
+    sensor_write_register(FIFO_READ_PTR, 0);
 }
 
 /**
@@ -52,12 +59,12 @@ void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_con
  * @param led_pa Configures LEDs pulse amplitude settings
  * @param multi_led Configures LEDs turn on-off stages 
  */
-void MAX30101_LED_Config(uint8_t[4] led_pa, uint8_t[2] multi_led){
-    for(int i = 0; i < 4; i++)
+void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULTI_LED_N_REG]){
+    for(int i = 0; i < LED_PULSE_N_REG; i++)
     {
         sensor_write_register((LED_PULSE_AMP + i), led_pa[i]);
     }
-    for(int i = 0; i < 2; i++)
+    for(int i = 0; i < MULTI_LED_N_REG; i++)
     {
         sensor_write_register((MULTI_LED_CTRL + i), multi_led[i]);
     }
@@ -68,28 +75,29 @@ void MAX30101_LED_Config(uint8_t[4] led_pa, uint8_t[2] multi_led){
  * @param acc_data Pointer to an HEALTH_data struct where the results will be stored.
  * @param read_ptr Pointer to last read position of FIFO
  */
-void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr){
-    //uint8_t raw_data[6]; // Buffer to hold 6 bytes for X, Y, Z axes
-    int16_t x_raw, y_raw, z_raw;
-    float sensitivity;
+void MAX30101_Read_Data(HEALTH_data **acc_data, uint8_t read_ptr, uint8_t active_leds){
 
-    // Read 6 bytes of data starting from the first accelerometer register.
-    // The sensor auto-increments the register address, so a single read operation
-    // fetches all 3 axes (X, Y, Z).
-    sensor_read_register(IMU_ACC_OUT_X_L_REG, raw_data, 6);
+    uint8_t     write_ptr, local_ptr;
+    uint8_t     available_samples;
+    uint8_t     temp[3 * NUMBER_OF_LEDS];
 
-    // Combine LSB and MSB to form a signed 16-bit integer for each axis
-    x_raw = (int16_t)((raw_data[1] << 8) | raw_data[0]);
-    y_raw = (int16_t)((raw_data[3] << 8) | raw_data[2]);
-    z_raw = (int16_t)((raw_data[5] << 8) | raw_data[4]);
+    sensor_read_register(FIFO_WRITE_PTR, &write_ptr, 1);
+    if (write_ptr >= read_ptr)
+        available_samples = write_ptr - read_ptr;
+    else 
+        available_samples = 32 - read_ptr + write_ptr;
 
-    // Get the correct sensitivity factor based on the configured full scale
-    sensitivity = get_accel_sensitivity(accelerometer_full_scale);
+    local_ptr = read_ptr;
+    for (uint8_t i = 0; i < available_samples; i++){
+        sensor_read_register(FIFO_DATA_REG, temp, 3* active_leds);
+        for (uint8_t j = 0; j < active_leds; j++){
+            acc_data[j][local_ptr] = temp[0 + 3 * j] << 16 | temp[1 + 3 * j] << 8 | temp[2 + 3 * j];
+        }
 
-    // Convert raw data to 'g' (gravitational force) and store it in the struct
-    acc_data->x = (float)x_raw * sensitivity;
-    acc_data->y = (float)y_raw * sensitivity;
-    acc_data->z = (float)z_raw * sensitivity;
+        local_ptr++;
+        if (local_ptr == 32)
+            local_ptr = 0;
+    }
 }
 
 
@@ -107,12 +115,10 @@ void MAX30101_Read_Data(HEALTH_data *acc_data, uint8_t read_ptr){
 static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len) {
     // Send the register address to the Sensor to prepare for reading.
     // This is a two-step process in I2C: first a write, then a read.
-    if (HAL_I2C_Master_Transmit(&hi2c3, MAX3010_READ_ADDRESS << 1, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
+    if (HAL_I2C_Master_Transmit(&hi2c3, MAX3010_READ_ADDRESS, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }
-
-    // Read the requested number of bytes from the IMU.
-    if (HAL_I2C_Master_Receive(&hi2c3, MAX3010_READ_ADDRESS << 1, data, data_len, MAX30101_TIMEOUT) != HAL_OK) {
+    if (HAL_I2C_Master_Receive(&hi2c3, MAX3010_READ_ADDRESS, data, data_len, MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }
     return 1; // Success
@@ -127,7 +133,7 @@ static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t da
  */
 static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data) {
     uint8_t tx_buffer[] = {reg_addr, reg_data};
-    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_WRITE_ADDRESS << 1, tx_buffer, sizeof(tx_buffer), MAX30101_TIMEOUT) != HAL_OK) {
+    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_WRITE_ADDRESS, tx_buffer, sizeof(tx_buffer), MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }
     return 1; // Success
