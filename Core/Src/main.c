@@ -34,6 +34,8 @@
 #include "Memory_operations.h"
 #include "led_driver.h"
 #include "imu_driver.h"
+#include "MAX30101_driver.h"
+#include "MAX30205_driver.h"
 #include "bluetooth.h"
 #include <stdint.h>
 
@@ -92,7 +94,7 @@ uint8_t raw_accelerometer[6] = {0};
 uint8_t raw_gyroscope[6] = {0};
 
 // Health data
-static HEALTH_data hr_data[NUMBER_OF_ACTIVE_LEDS];
+static HEALTH_data hr_data[NUMBER_OF_ACTIVE_LEDS][32];
 
 uint8_t raw_health[3 * NUMBER_OF_ACTIVE_LEDS] = {0};
 
