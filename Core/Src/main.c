@@ -35,6 +35,7 @@
 #include "led_driver.h"
 #include "imu_driver.h"
 #include "bluetooth.h"
+#include <stdint.h>
 
 /* USER CODE END Includes */
 
@@ -89,6 +90,14 @@ static IMU_Data gyroscope_data;
 
 uint8_t raw_accelerometer[6] = {0};
 uint8_t raw_gyroscope[6] = {0};
+
+// Health data
+static HEALTH_data hr_data[NUMBER_OF_ACTIVE_LEDS];
+
+uint8_t raw_health[3 * NUMBER_OF_ACTIVE_LEDS] = {0};
+
+uint8_t read_ptr_fifo;
+
 
 /// ----- NAND FLASH variables ----- ///
 
@@ -183,12 +192,20 @@ int main(void)
   spi_nand_init();
   find_bad_blocks(bad_blocks); // find bad_blocks and save them
 
-  if(IMU_Init() == 1) {
-    // If IMU is successfully initialized, configure the sensors
-    // Configure Accelerometer: 52 Hz ODR, ±2g FS, High Performance
-    IMU_ConfigAccelerometer(ACC_ODR_52HZ, ACC_FS_2G, 1);
-    // Configure Gyroscope: 52 Hz ODR, 250 dps FS, High Performance
-    IMU_ConfigGyroscope(GYR_ODR_52HZ, GYR_FS_250DPS, 1);
+  if(MAX30101_Init() == 1) {
+    uint8_t conf_fifo, conf_mode, spo2_conf, conf_led_pulse[LED_PULSE_N_REG], conf_multi_led[MULTI_LED_N_REG]; 
+    conf_fifo = 0x50;
+    conf_mode = 0x03;
+    spo2_conf = 0x6F;
+
+    for (int i = 0; i < LED_PULSE_N_REG; i++){
+      conf_led_pulse[i] = 0x3F;
+    }
+    for (int i = 0; i < MULTI_LED_N_REG; i++){
+      conf_multi_led[i] = 0x00;
+    }
+    MAX30101_Mode_Config(conf_fifo, conf_mode, spo2_conf);
+    MAX30101_LED_Config(conf_led_pulse, conf_multi_led);
   } else {
     // IMU initialization failed, blink red LED for 2 seconds
 	LED_Toggle(LED_RED);
@@ -803,10 +820,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         // Read sensor data from the IMU
         IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
         IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
-
+        MAX30101_Read_Data(hr_data, raw_health, &read_ptr_fifo);
         // Send the accelerometer and gyroscope data via BLE
         // We are sending only the X-axis data
-        BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer);
+        //BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer);
         //TODO: Change Gyro function
         //BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, (uint32_t)gyroscope_data.x);
 
@@ -830,7 +847,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		tim++;
 
 		// Create the data packet to be saved in memory
-		write_packet(sample, timestamp, raw_accelerometer, raw_gyroscope, NAND_packet);
+		write_packet(sample, timestamp, raw_accelerometer, raw_gyroscope, raw_health , NAND_packet);
 		sample++;
 		// Write data packet in memory
         write_memory();
