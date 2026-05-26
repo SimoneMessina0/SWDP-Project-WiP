@@ -70,7 +70,7 @@ void erase_good_blocks(uint8_t *bad_blocks){
 	}
 }
 
-void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, uint8_t *accelerometer, uint8_t *NAND_packet){
+void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, uint8_t *accelerometer, uint8_t *health, uint8_t *NAND_packet){
 
 	NAND_packet[0 + (sample * BYTES_PER_SAMPLE)] = timestamp.hh;
 	NAND_packet[1 + (sample * BYTES_PER_SAMPLE)] = timestamp.mm;
@@ -84,22 +84,18 @@ void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, ui
 	NAND_packet[3 + (sample * BYTES_PER_SAMPLE)] = m[0];
 	NAND_packet[4 + (sample * BYTES_PER_SAMPLE)] = m[1];
 
-	NAND_packet[5 + (sample * BYTES_PER_SAMPLE)] = accelerometer[0];
-	NAND_packet[6 + (sample * BYTES_PER_SAMPLE)] = accelerometer[1];
-	NAND_packet[7 + (sample * BYTES_PER_SAMPLE)] = accelerometer[2];
-	NAND_packet[8 + (sample * BYTES_PER_SAMPLE)] = accelerometer[3];
-	NAND_packet[9 + (sample * BYTES_PER_SAMPLE)] = accelerometer[4];
-	NAND_packet[10 + (sample * BYTES_PER_SAMPLE)] = accelerometer[5];
+	for (uint8_t i = 0; i < 6; i++){
+		NAND_packet[5 + i + (sample * BYTES_PER_SAMPLE)] = accelerometer[i];
+	}
+	for (uint8_t i = 0; i < 6; i++){
+		NAND_packet[11 + i + (sample * BYTES_PER_SAMPLE)] = gyroscope[i];
+	}
+	for (uint8_t i = 0; i < 3 * NUMBER_OF_ACTIVE_LEDS; i++){
+		NAND_packet[17 + i + (sample * BYTES_PER_SAMPLE)] = health[i];
+	}
 
-	NAND_packet[11 + (sample * BYTES_PER_SAMPLE)] = gyroscope[0];
-	NAND_packet[12 + (sample * BYTES_PER_SAMPLE)] = gyroscope[1];
-	NAND_packet[13 + (sample * BYTES_PER_SAMPLE)] = gyroscope[2];
-	NAND_packet[14 + (sample * BYTES_PER_SAMPLE)] = gyroscope[3];
-	NAND_packet[15 + (sample * BYTES_PER_SAMPLE)] = gyroscope[4];
-	NAND_packet[16 + (sample * BYTES_PER_SAMPLE)] = gyroscope[5];
 
 }
-
 
 
 
