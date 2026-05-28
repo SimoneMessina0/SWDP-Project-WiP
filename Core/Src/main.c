@@ -881,8 +881,8 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 			case STATE_ACQUISITION:
 				// If data acquisition is active, stop it.
 				current_state = STATE_IDLE;
-				HAL_TIM_Base_Stop_IT(&htim2); // Stop the timer
-				LED_Off(LED_GREEN); // Turn off the LED
+				LED_Off(LED_GREEN); // Turn off the LED				HAL_TIM_Base_Stop_IT(&htim2); // Stop the timer
+
         LED_Off(LED_RED);
 				break;
 			case STATE_USB_CONNECTED:
