@@ -129,9 +129,11 @@ def process_bin_file(bin_filename, csv_filename=None):
     plt.show()
 
     # plot PPG (MAX30101)
-    plt.figure(figsize=(15,3))
-    plt.plot(df.index, df["ppg_led0"], label="ppg_led0")
-    plt.plot(df.index, df["ppg_led1"], label="ppg_led1")
+    fig, axs = plt.subplot(nrows = 2, ncols = 1, figsize=(15,5))
+
+    # plt.figure(figsize=(15,3))
+    axs[0].plot(df.index, df["ppg_led0"], label="ppg_led0")
+    axs[1].plot(df.index, df["ppg_led1"], label="ppg_led1")
     plt.title("MAX30101 PPG")
     plt.xlabel("Subpacket index")
     plt.ylabel("Raw 24-bit value")
