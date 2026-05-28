@@ -15,7 +15,7 @@
 
 // I2C Addresses
 #define MAX30101_WRITE_ADDRESS  0xAE //Scod: ho invertito AF e AE che li avevamo confusi
-#define MAX30101_READ_ADDRESS    0xAF // 0xAE >> 1 and 0xAF >> 1 are the same address
+#define MAX30101_READ_ADDRESS   0xAF // 0xAE >> 1 and 0xAF >> 1 are the same address
 #define MAX30101_TIMEOUT        100
 // --- Register Configuration Values ---
 // Interrupt Registers
@@ -41,7 +41,6 @@
 #define NUMBER_OF_ACTIVE_LEDS  2
 #define LED_PULSE_N_REG 4
 #define MULTI_LED_N_REG 2
-#define MAX_BYTES_READ 12
 // This structure is used to store the Health data from MAX30101
 typedef uint32_t HEALTH_data;
 

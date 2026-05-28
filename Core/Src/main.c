@@ -194,6 +194,24 @@ int main(void)
   spi_nand_init();
   find_bad_blocks(bad_blocks); // find bad_blocks and save them
 
+  if(IMU_Init() == 1) {
+    IMU_ConfigAccelerometer(ACC_ODR_104HZ, ACC_FS_4G, 1);
+    IMU_ConfigGyroscope(GYR_ODR_104HZ, GYR_FS_250DPS, 1);
+  } else {
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+  }
+
   if(MAX30101_Init() == 1) {
     uint8_t conf_fifo, conf_mode, spo2_conf, conf_led_pulse[LED_PULSE_N_REG], conf_multi_led[MULTI_LED_N_REG]; 
     conf_fifo = 0x50;
@@ -850,7 +868,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		tim++;
 
 		// Create the data packet to be saved in memory
-		write_packet(sample, timestamp, raw_accelerometer, raw_gyroscope, raw_health , NAND_packet);
+    write_packet(sample, timestamp, raw_gyroscope, raw_accelerometer, raw_health , NAND_packet);
 		sample++;
 		// Write data packet in memory
         write_memory();

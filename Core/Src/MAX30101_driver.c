@@ -52,7 +52,7 @@ void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_con
  * @param led_pa Configures LEDs pulse amplitude settings
  * @param multi_led Configures LEDs turn on-off stages 
  */
-void MAX30101_LED_Config(uint8_t *led_pa, uint8_t *multi_led){
+void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULTI_LED_N_REG]){
     for(int i = 0; i < LED_PULSE_N_REG; i++)
     {
         sensor_write_register((LED_PULSE_AMP + i), led_pa[i]);
@@ -77,11 +77,13 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
 
 
     sensor_read_register(FIFO_WRITE_PTR, &write_ptr, 1);
-    if (write_ptr >= local_ptr)
-        available_samples = write_ptr - local_ptr;
-    else 
-        available_samples = 32 - local_ptr + write_ptr;
+    if (write_ptr != local_ptr)
+        available_samples = 1;
 
+    // if (write_ptr >= local_ptr)
+    //     available_samples = write_ptr - local_ptr;
+    // else 
+    //     available_samples = 32 - local_ptr + write_ptr;
     for (uint8_t i = 0; i < available_samples; i++){
         sensor_read_register(FIFO_DATA_REG, raw_data, 3* NUMBER_OF_ACTIVE_LEDS);
         for (uint8_t j = 0; j < NUMBER_OF_ACTIVE_LEDS; j++){
