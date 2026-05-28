@@ -254,6 +254,7 @@ int main(void)
 	  		   current_state = STATE_USB_CONNECTED;
 			   // Green LED on upon USB Connection
 			   LED_On(LED_GREEN);
+         LED_On(LED_RED);
 		    }
 	  		break;
 
@@ -875,12 +876,14 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 				current_state = STATE_ACQUISITION;
 				HAL_TIM_Base_Start_IT(&htim2); // Start the timer for periodic data reading
 				LED_On(LED_GREEN); // Provide visual feedback for starting acquisition
+        LED_On(LED_RED);
 			break;
 			case STATE_ACQUISITION:
 				// If data acquisition is active, stop it.
 				current_state = STATE_IDLE;
 				HAL_TIM_Base_Stop_IT(&htim2); // Stop the timer
 				LED_Off(LED_GREEN); // Turn off the LED
+        LED_Off(LED_RED);
 				break;
 			case STATE_USB_CONNECTED:
 				// If USB is connected, start the download process.
