@@ -244,7 +244,7 @@ int main(void)
 	  {
 	  	  case STATE_IDLE:
 	  		// Check if a USB connection has been detected
-	  		if(!usb_flag)
+  		if(!usb_flag)
 		    {
 	  			//MX_USB_Device_Init();
 		    }

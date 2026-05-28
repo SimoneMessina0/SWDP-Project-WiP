@@ -82,14 +82,8 @@ def process_bin_file(bin_filename, csv_filename=None):
                 gyro_x_list.append(gx[0])
                 gyro_y_list.append(gy[0])
                 gyro_z_list.append(gz[0])
-                # MAX30101 PPG data: bytes 17..22 (3 bytes per LED, 2 LEDs)
-                # convert to 24-bit unsigned values
-                if len(subpkt) >= 23:
-                    ppg0 = (int(subpkt[17]) << 16) | (int(subpkt[18]) << 8) | int(subpkt[19])
-                    ppg1 = (int(subpkt[20]) << 16) | (int(subpkt[21]) << 8) | int(subpkt[22])
-                else:
-                    ppg0 = 0
-                    ppg1 = 0
+                ppg0 = (int(subpkt[17]) << 16) | (int(subpkt[18]) << 8) | int(subpkt[19])
+                ppg1 = (int(subpkt[20]) << 16) | (int(subpkt[21]) << 8) | int(subpkt[22])
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
 
