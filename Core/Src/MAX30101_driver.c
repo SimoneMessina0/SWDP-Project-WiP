@@ -110,7 +110,7 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
 static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len) {
     // Send the register address to the Sensor to prepare for reading.
     // This is a two-step process in I2C: first a write, then a read.
-    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_READ_ADDRESS, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
+    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_WRITE_ADDRESS, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }
     if (HAL_I2C_Master_Receive(&hi2c3, MAX30101_READ_ADDRESS, data, data_len, MAX30101_TIMEOUT) != HAL_OK) {
