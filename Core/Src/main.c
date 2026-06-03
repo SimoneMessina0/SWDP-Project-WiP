@@ -96,7 +96,7 @@ uint8_t raw_gyroscope[6] = {0};
 // Health data
 static HEALTH_data hr_data[NUMBER_OF_ACTIVE_LEDS][32];
 
-uint8_t raw_health[3 * NUMBER_OF_ACTIVE_LEDS] = {0};
+uint8_t raw_health[3 * NUMBER_OF_ACTIVE_LEDS * 32] = {0};
 
 uint8_t read_ptr_fifo;
 
@@ -216,8 +216,7 @@ int main(void)
     uint8_t conf_fifo, conf_mode, spo2_conf, conf_led_pulse[LED_PULSE_N_REG], conf_multi_led[MULTI_LED_N_REG]; 
     conf_fifo = 0x50;
     conf_mode = 0x03;
-    spo2_conf = 0x6F;
-
+    spo2_conf = 0x6C;
     for (int i = 0; i < LED_PULSE_N_REG; i++){
       conf_led_pulse[i] = 0x3F;
     }
@@ -230,20 +229,21 @@ int main(void)
     // IMU initialization failed, blink red LED for 2 seconds
 	LED_Toggle(LED_RED);
 	HAL_Delay(500);
-	LED_Toggle(LED_RED);
+	LED_Toggle(LED_GREEN);
 	HAL_Delay(500);
 	LED_Toggle(LED_RED);
 	HAL_Delay(500);
-	LED_Toggle(LED_RED);
+	LED_Toggle(LED_GREEN);
 	HAL_Delay(500);
 	LED_Toggle(LED_RED);
 	HAL_Delay(500);
-	LED_Toggle(LED_RED);
+	LED_Toggle(LED_GREEN);
 	HAL_Delay(500);
   }
 
   // Turn off the red LED to indicate that initialization is complete
   LED_Off(LED_RED);
+    LED_Off(LED_GREEN);
 
   /* USER CODE END 2 */
 
@@ -892,6 +892,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 				// If the device is idle, start data acquisition.
 				erase_memory();
 				current_state = STATE_ACQUISITION;
+        MAX30101_Reset();
 				HAL_TIM_Base_Start_IT(&htim2); // Start the timer for periodic data reading
 				LED_On(LED_GREEN); // Provide visual feedback for starting acquisition
         LED_On(LED_RED);

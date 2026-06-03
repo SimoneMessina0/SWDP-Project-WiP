@@ -20,7 +20,7 @@ static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data);
 uint8_t MAX30101_Init(void) {
     uint8_t pwr_rdy_value = 0;
     // Read the WHO_AM_I register and check if the returned value matches the expected one
-    if (sensor_read_register(INTERRUPT_STATUS_1, &pwr_rdy_value, 1) && (pwr_rdy_value & 1)) {
+    if (sensor_read_register(INTERRUPT_STATUS_1, &pwr_rdy_value, 1) && ((pwr_rdy_value & 1) == 0)) {
         return 1; // Success
     }
     return 0; // Failure
@@ -45,6 +45,7 @@ void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_con
     sensor_write_register(FIFO_CONFIGURATION, fifo_conf);
     sensor_write_register(MODE_CONFIGURATION, mode_conf);
     sensor_write_register(SPO2_CONFIGURATION, spo2_conf);
+
 }
 
 /**
@@ -71,14 +72,16 @@ void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULT
  */
 void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *read_ptr){
 
-    uint8_t     write_ptr;
-    uint8_t     available_samples;
+    uint8_t     write_ptr, read_ptr_loc, ovf_counter;
+    uint8_t     available_samples = 0;
     uint8_t     local_ptr = *read_ptr;
 
-
     sensor_read_register(FIFO_WRITE_PTR, &write_ptr, 1);
-    if (write_ptr != local_ptr)
-        available_samples = 1;
+    sensor_read_register(FIFO_READ_PTR, &read_ptr_loc, 1);
+    sensor_read_register(FIFO_OVF_COUNTER, &ovf_counter, 1);
+    while (write_ptr == local_ptr){}
+
+    available_samples = 1;
 
     // if (write_ptr >= local_ptr)
     //     available_samples = write_ptr - local_ptr;
@@ -110,15 +113,16 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
  * @return 1 on success, 0 on I2C communication error.
  */
 static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len) {
-    // Send the register address to the Sensor to prepare for reading.
-    // This is a two-step process in I2C: first a write, then a read.
-    if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_WRITE_ADDRESS, &reg_addr, 1, MAX30101_TIMEOUT) != HAL_OK) {
-        return 0; // Communication error
+    if (HAL_I2C_Mem_Read(&hi2c3, 
+                          MAX30101_WRITE_ADDRESS,    // 0xAE — HAL gestisce il bit R/W
+                          reg_addr, 
+                          I2C_MEMADD_SIZE_8BIT,      // indirizzo registro su 1 byte
+                          data, 
+                          data_len, 
+                          MAX30101_TIMEOUT) != HAL_OK) {
+        return 0;
     }
-    if (HAL_I2C_Master_Receive(&hi2c3, MAX30101_READ_ADDRESS, data, data_len, MAX30101_TIMEOUT) != HAL_OK) {
-        return 0; // Communication error
-    }
-    return 1; // Success
+    return 1;
 }
 
 /**

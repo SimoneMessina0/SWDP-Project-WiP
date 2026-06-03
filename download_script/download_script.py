@@ -82,8 +82,9 @@ def process_bin_file(bin_filename, csv_filename=None):
                 gyro_x_list.append(gx[0])
                 gyro_y_list.append(gy[0])
                 gyro_z_list.append(gz[0])
-                ppg0 = (int(subpkt[17]) << 16) | (int(subpkt[18]) << 8) | int(subpkt[19])
-                ppg1 = (int(subpkt[20]) << 16) | (int(subpkt[21]) << 8) | int(subpkt[22])
+                # PPG (MAX30101): two 24-bit big-endian values
+                ppg0 = int.from_bytes(subpkt[17:20], byteorder='big')
+                ppg1 = int.from_bytes(subpkt[20:23], byteorder='big')
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
 
