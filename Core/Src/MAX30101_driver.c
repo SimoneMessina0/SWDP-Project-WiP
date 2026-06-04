@@ -9,7 +9,7 @@ extern I2C_HandleTypeDef hi2c3;
 // --- Private Function Prototypes (Helper Functions) ---
 // These functions are only used internally by the driver
 static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len);
-static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data);
+static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data, uint8_t mask);
 // --- Public Function Implementations ---
 
 /**
@@ -27,9 +27,9 @@ uint8_t MAX30101_Init(void) {
 }
 
 void MAX30101_Reset(void){
-    sensor_write_register(FIFO_WRITE_PTR, 0);
-    sensor_write_register(FIFO_OVF_COUNTER, 0);
-    sensor_write_register(FIFO_READ_PTR, 0);
+    sensor_write_register(FIFO_WRITE_PTR, 0, 0b00001111);
+    sensor_write_register(FIFO_OVF_COUNTER, 0, 0b00001111);
+    sensor_write_register(FIFO_READ_PTR, 0, 0b00001111);
 }
 
 /**
@@ -40,11 +40,11 @@ void MAX30101_Reset(void){
  */
 void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_conf){
     // Combine ODR and FS into a single value for CTRL1_XL register
-    sensor_write_register(INTERRUPT_ENABLE_1, 0);
-    sensor_write_register(INTERRUPT_ENABLE_2, 0);
-    sensor_write_register(FIFO_CONFIGURATION, fifo_conf);
-    sensor_write_register(MODE_CONFIGURATION, mode_conf);
-    sensor_write_register(SPO2_CONFIGURATION, spo2_conf);
+    sensor_write_register(INTERRUPT_ENABLE_1, 0, 0b11100000);
+    sensor_write_register(INTERRUPT_ENABLE_2, 0, 0b00000010);
+    sensor_write_register(FIFO_CONFIGURATION, fifo_conf, 0b11111111);
+    sensor_write_register(MODE_CONFIGURATION, mode_conf, 0b11000111);
+    sensor_write_register(SPO2_CONFIGURATION, spo2_conf, 0b01111111);
 
 }
 
@@ -56,11 +56,11 @@ void MAX30101_Mode_Config(uint8_t fifo_conf, uint8_t mode_conf, uint8_t spo2_con
 void MAX30101_LED_Config(uint8_t led_pa[LED_PULSE_N_REG], uint8_t multi_led[MULTI_LED_N_REG]){
     for(int i = 0; i < LED_PULSE_N_REG; i++)
     {
-        sensor_write_register((LED_PULSE_AMP + i), led_pa[i]);
+        sensor_write_register((LED_PULSE_AMP + i), led_pa[i], 0b11111111);
     }
     for(int i = 0; i < MULTI_LED_N_REG; i++)
     {
-        sensor_write_register((MULTI_LED_CTRL + i), multi_led[i]);
+        sensor_write_register((MULTI_LED_CTRL + i), multi_led[i], 0b01110111);
     }
 }
 
@@ -132,8 +132,11 @@ static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t da
  * @param reg_data The byte of data to write.
  * @return 1 on success, 0 on I2C communication error.
  */
-static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data) {
+static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data, uint8_t mask) {
     uint8_t tx_buffer[] = {reg_addr, reg_data};
+    uint8_t prev_data;
+    sensor_read_register(reg_addr, &prev_data, 1);
+    tx_buffer[1] = (reg_data & mask) | (prev_data & ~mask);
     if (HAL_I2C_Master_Transmit(&hi2c3, MAX30101_WRITE_ADDRESS, tx_buffer, sizeof(tx_buffer), MAX30101_TIMEOUT) != HAL_OK) {
         return 0; // Communication error
     }

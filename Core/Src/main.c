@@ -214,15 +214,15 @@ int main(void)
 
   if(MAX30101_Init() == 1) {
     uint8_t conf_fifo, conf_mode, spo2_conf, conf_led_pulse[LED_PULSE_N_REG], conf_multi_led[MULTI_LED_N_REG]; 
-    conf_fifo = 0x50;
-    conf_mode = 0x03;
-    spo2_conf = 0x6C;
-    for (int i = 0; i < LED_PULSE_N_REG; i++){
-      conf_led_pulse[i] = 0x3F;
-    }
-    for (int i = 0; i < MULTI_LED_N_REG; i++){
-      conf_multi_led[i] = 0x00;
-    }
+    conf_fifo = 0b01010000;
+    conf_mode = 0b00000011;
+    spo2_conf = 0b01101110;
+    conf_led_pulse[0] = 0x3F;
+    conf_led_pulse[1] = 0x3F;
+    conf_led_pulse[2] = 0;
+    conf_led_pulse[3] = 0;
+    conf_multi_led[0] = 0b00010010;
+    conf_multi_led[1] = 0;
     MAX30101_Mode_Config(conf_fifo, conf_mode, spo2_conf);
     MAX30101_LED_Config(conf_led_pulse, conf_multi_led);
   } else {
