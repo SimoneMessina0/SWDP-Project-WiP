@@ -18,7 +18,7 @@
 #include "MAX30205_driver.h"
 
 #define BYTES_PER_SAMPLE 23 // 6 axis imu * 2 (acc and gyro)
-#define SAMPLES_PER_PAGE 177 // 4096/BYTES_PER_SAMPLE rounded
+#define SAMPLES_PER_PAGE 178 // 4096/BYTES_PER_SAMPLE rounded
 
 typedef struct bookmark
 {

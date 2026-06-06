@@ -93,7 +93,7 @@ void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, ui
 	for (uint8_t i = 0; i < 3 * NUMBER_OF_ACTIVE_LEDS; i++){
 		NAND_packet[17 + i + (sample * BYTES_PER_SAMPLE)] = health[i];
 	}
-
+	
 
 }
 

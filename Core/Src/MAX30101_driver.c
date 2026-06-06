@@ -79,9 +79,10 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
     sensor_read_register(FIFO_WRITE_PTR, &write_ptr, 1);
     sensor_read_register(FIFO_READ_PTR, &read_ptr_loc, 1);
     sensor_read_register(FIFO_OVF_COUNTER, &ovf_counter, 1);
-    while (write_ptr == local_ptr){}
+    if (write_ptr != local_ptr){
+        available_samples = 1;
+    }
 
-    available_samples = 1;
 
     // if (write_ptr >= local_ptr)
     //     available_samples = write_ptr - local_ptr;
@@ -114,7 +115,7 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
  */
 static uint8_t sensor_read_register(uint8_t reg_addr, uint8_t* data, uint16_t data_len) {
     if (HAL_I2C_Mem_Read(&hi2c3, 
-                          MAX30101_WRITE_ADDRESS,    // 0xAE — HAL gestisce il bit R/W
+                          MAX30101_READ_ADDRESS,    // 0xAE — HAL gestisce il bit R/W
                           reg_addr, 
                           I2C_MEMADD_SIZE_8BIT,      // indirizzo registro su 1 byte
                           data, 
