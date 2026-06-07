@@ -40,14 +40,12 @@ def receive_and_save_data(ser, bin_filename, packet_size=4096, max_packets=2048*
 
 def process_bin_file(bin_filename, csv_filename=None):
     hh_list, mm_list, ss_list, sss_list = [], [], [], []
-    acc_x_list, acc_y_list, acc_z_list = [], [], []
-    gyro_x_list, gyro_y_list, gyro_z_list = [], [], []
     ppg0_list, ppg1_list = [], []
 
     # Each NAND page is sent as 4096 bytes. We ignore the last 16 spare bytes
-    # and parse subpackets. Each sample contains: 5 bytes timestamp, 6 bytes
-    # accelerometer, 6 bytes gyroscope, 6 bytes MAX30101 (3 bytes per LED)
-    SUBPKT_SIZE = 23
+    # and parse subpackets. New subpacket layout: 5 bytes timestamp, 3 bytes PPG0,
+    # 3 bytes PPG1 -> total 11 bytes per subpacket
+    SUBPKT_SIZE = 11
     with open(bin_filename, "rb") as f:
         while True:
             pagina = f.read(4096)
@@ -69,22 +67,10 @@ def process_bin_file(bin_filename, csv_filename=None):
                 mm_list.append(mm)
                 ss_list.append(ss)
                 sss_list.append(sss)
-                # dati IMU
-                # accelerometer: bytes 5..10 (6 bytes)
-                acc_arr = np.frombuffer(subpkt[5:11], dtype=np.uint8).reshape(1,6)
-                acc_x, acc_y, acc_z = conv_imu(acc_arr)
-                # gyroscope: bytes 11..16 (6 bytes)
-                gyro_arr = np.frombuffer(subpkt[11:17], dtype=np.uint8).reshape(1,6)
-                gx, gy, gz = conv_gyro(gyro_arr)
-                acc_x_list.append(acc_x[0])
-                acc_y_list.append(acc_y[0])
-                acc_z_list.append(acc_z[0])
-                gyro_x_list.append(gx[0])
-                gyro_y_list.append(gy[0])
-                gyro_z_list.append(gz[0])
-                # PPG (MAX30101): two 24-bit big-endian values
-                ppg0 = int.from_bytes(subpkt[17:20], byteorder='big')
-                ppg1 = int.from_bytes(subpkt[20:23], byteorder='big')
+                # PPG (MAX30101): two 24-bit big-endian values placed after
+                # the 5-byte timestamp: bytes 5..7 -> ppg0, bytes 8..10 -> ppg1
+                ppg0 = int.from_bytes(subpkt[5:8], byteorder='big')
+                ppg1 = int.from_bytes(subpkt[8:11], byteorder='big')
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
 
@@ -94,54 +80,19 @@ def process_bin_file(bin_filename, csv_filename=None):
         "mm": mm_list,
         "ss": ss_list,
         "sss": sss_list,
-        "acc_x": acc_x_list,
-        "acc_y": acc_y_list,
-        "acc_z": acc_z_list,
-        "gyro_x": gyro_x_list,
-        "gyro_y": gyro_y_list,
-        "gyro_z": gyro_z_list,
         "ppg_led0": ppg0_list,
         "ppg_led1": ppg1_list
     })
 
-    # plot accelerometro
-    plt.figure(figsize=(15,5))
-    plt.subplot(2,1,1)
-    plt.plot(df.index, df["acc_x"], label="acc_x")
-    plt.plot(df.index, df["acc_y"], label="acc_y")
-    plt.plot(df.index, df["acc_z"], label="acc_z")
-    plt.title("Accelerometer")
-    plt.xlabel("Subpacket index")
-    plt.ylabel("g")
-    plt.legend()
-    plt.grid(True)
-
-    # plot giroscopio
-    plt.subplot(2,1,2)
-    plt.plot(df.index, df["gyro_x"], label="gyro_x")
-    plt.plot(df.index, df["gyro_y"], label="gyro_y")
-    plt.plot(df.index, df["gyro_z"], label="gyro_z")
-    plt.title("Gyroscope")
-    plt.xlabel("Subpacket index")
-    plt.ylabel("deg/s")
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
     # plot PPG (MAX30101)
-    fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(15,5))
-
-    axs[0].plot(df.index, df["ppg_led0"], label="ppg_led0")
-    axs[1].plot(df.index, df["ppg_led1"], label="ppg_led1")
-    fig.suptitle("MAX30101 PPG")
-    axs[1].set_xlabel("Subpacket index")
-    axs[0].set_ylabel("Raw 24-bit value")
-    axs[1].set_ylabel("Raw 24-bit value")
-    axs[0].legend()
-    axs[1].legend()
-    axs[0].grid(True)
-    axs[1].grid(True)
+    plt.figure(figsize=(12,6))
+    plt.plot(df.index, df["ppg_led0"], label="ppg_led0")
+    plt.plot(df.index, df["ppg_led1"], label="ppg_led1")
+    plt.title("MAX30101 PPG")
+    plt.xlabel("Subpacket index")
+    plt.ylabel("Raw 24-bit value")
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
     plt.show()
 
