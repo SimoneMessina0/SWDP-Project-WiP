@@ -840,8 +840,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     uint8_t prev_read_ptr_fifo = read_ptr_fifo;
     MAX30101_Read_Data(hr_data, raw_health, &read_ptr_fifo);
     if (prev_read_ptr_fifo != read_ptr_fifo) {
-      IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
-      IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
+      // IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
+      // IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
       // Send the accelerometer and gyroscope data via BLE
       // We are sending only the X-axis data
       //BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer);

@@ -84,14 +84,18 @@ void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, ui
 	NAND_packet[3 + (sample * BYTES_PER_SAMPLE)] = m[0];
 	NAND_packet[4 + (sample * BYTES_PER_SAMPLE)] = m[1];
 
-	for (uint8_t i = 0; i < 6; i++){
-		NAND_packet[5 + i + (sample * BYTES_PER_SAMPLE)] = accelerometer[i];
-	}
-	for (uint8_t i = 0; i < 6; i++){
-		NAND_packet[11 + i + (sample * BYTES_PER_SAMPLE)] = gyroscope[i];
-	}
+	// for (uint8_t i = 0; i < 6; i++){
+	// 	NAND_packet[5 + i + (sample * BYTES_PER_SAMPLE)] = accelerometer[i];
+	// }
+	// for (uint8_t i = 0; i < 6; i++){
+	// 	NAND_packet[11 + i + (sample * BYTES_PER_SAMPLE)] = gyroscope[i];
+	// }
+	// for (uint8_t i = 0; i < 3 * NUMBER_OF_ACTIVE_LEDS; i++){
+	// 	NAND_packet[17 + i + (sample * BYTES_PER_SAMPLE)] = health[i];
+	// }
+
 	for (uint8_t i = 0; i < 3 * NUMBER_OF_ACTIVE_LEDS; i++){
-		NAND_packet[17 + i + (sample * BYTES_PER_SAMPLE)] = health[i];
+		NAND_packet[5 + i + (sample * BYTES_PER_SAMPLE)] = health[i];
 	}
 	
 

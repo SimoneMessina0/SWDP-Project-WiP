@@ -91,7 +91,8 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
     for (uint8_t i = 0; i < available_samples; i++){
         sensor_read_register(FIFO_DATA_REG, raw_data, 3* NUMBER_OF_ACTIVE_LEDS);
         for (uint8_t j = 0; j < NUMBER_OF_ACTIVE_LEDS; j++){
-            acc_data[j][local_ptr] = raw_data[0 + 3 * j] << 16 | raw_data[1 + 3 * j] << 8 | raw_data[2 + 3 * j];
+            // acc_data[j][local_ptr] = raw_data[0 + 3 * j] << 16 | raw_data[1 + 3 * j] << 8 | raw_data[2 + 3 * j];
+            acc_data[j][local_ptr] = (uint32_t)raw_data[0 + 3 * j] << 16 | (uint32_t)raw_data[1 + 3 * j] << 8 | (uint32_t)raw_data[2 + 3 * j];
         }
 
         local_ptr++;
