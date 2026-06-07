@@ -47,7 +47,7 @@ def process_bin_file(bin_filename, csv_filename=None):
     # Each NAND page is sent as 4096 bytes. We ignore the last 16 spare bytes
     # and parse subpackets. Each sample contains: 5 bytes timestamp, 6 bytes
     # accelerometer, 6 bytes gyroscope, 6 bytes MAX30101 (3 bytes per LED)
-    SUBPKT_SIZE = 23
+    SUBPKT_SIZE = 11
     with open(bin_filename, "rb") as f:
         while True:
             pagina = f.read(4096)
@@ -69,22 +69,22 @@ def process_bin_file(bin_filename, csv_filename=None):
                 mm_list.append(mm)
                 ss_list.append(ss)
                 sss_list.append(sss)
-                # dati IMU
-                # accelerometer: bytes 5..10 (6 bytes)
-                acc_arr = np.frombuffer(subpkt[5:11], dtype=np.uint8).reshape(1,6)
-                acc_x, acc_y, acc_z = conv_imu(acc_arr)
-                # gyroscope: bytes 11..16 (6 bytes)
-                gyro_arr = np.frombuffer(subpkt[11:17], dtype=np.uint8).reshape(1,6)
-                gx, gy, gz = conv_gyro(gyro_arr)
-                acc_x_list.append(acc_x[0])
-                acc_y_list.append(acc_y[0])
-                acc_z_list.append(acc_z[0])
-                gyro_x_list.append(gx[0])
-                gyro_y_list.append(gy[0])
-                gyro_z_list.append(gz[0])
+                # # dati IMU
+                # # accelerometer: bytes 5..10 (6 bytes)
+                # acc_arr = np.frombuffer(subpkt[5:11], dtype=np.uint8).reshape(1,6)
+                # acc_x, acc_y, acc_z = conv_imu(acc_arr)
+                # # gyroscope: bytes 11..16 (6 bytes)
+                # gyro_arr = np.frombuffer(subpkt[11:17], dtype=np.uint8).reshape(1,6)
+                # gx, gy, gz = conv_gyro(gyro_arr)
+                # acc_x_list.append(acc_x[0])
+                # acc_y_list.append(acc_y[0])
+                # acc_z_list.append(acc_z[0])
+                # gyro_x_list.append(gx[0])
+                # gyro_y_list.append(gy[0])
+                # gyro_z_list.append(gz[0])
                 # PPG (MAX30101): two 24-bit big-endian values
-                ppg0 = int.from_bytes(subpkt[17:20], byteorder='big')
-                ppg1 = int.from_bytes(subpkt[20:23], byteorder='big')
+                ppg0 = int.from_bytes(subpkt[5:8], byteorder='big')
+                ppg1 = int.from_bytes(subpkt[8:11], byteorder='big')
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
 
