@@ -92,7 +92,8 @@ void MAX30101_Read_Data(HEALTH_data acc_data[][32], uint8_t *raw_data, uint8_t *
         sensor_read_register(FIFO_DATA_REG, raw_data, 3* NUMBER_OF_ACTIVE_LEDS);
         for (uint8_t j = 0; j < NUMBER_OF_ACTIVE_LEDS; j++){
             raw_data[0 + 3 * j] &= 0x3;
-            acc_data[j][local_ptr] = (raw_data[0 + 3 * j] << 16 | raw_data[1 + 3 * j] << 8 | raw_data[2 + 3 * j]) & 0x3FFFF;
+            // lo shift di 3 è per quando usiamo il formato a 15 bit, altrimenti è 0
+            acc_data[j][local_ptr] = ((raw_data[0 + 3 * j] << 16 | raw_data[1 + 3 * j] << 8 | raw_data[2 + 3 * j]) & 0x3FFFF) >> 3;
         }   
 
         local_ptr++;

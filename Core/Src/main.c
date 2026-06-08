@@ -215,9 +215,14 @@ int main(void)
     uint8_t conf_fifo, conf_mode, spo2_conf, conf_led_pulse[LED_PULSE_N_REG], conf_multi_led[MULTI_LED_N_REG]; 
     conf_fifo = 0b01010000;
     conf_mode = 0b00000011;
-    spo2_conf = 0b01101111;
-    conf_led_pulse[0] = 0x3F;
-    conf_led_pulse[1] = 0x3F;
+    // spo2_conf = 0b01101111;
+    // modifica ADC resolution al minimo (15 bit) per ridurre intensità fascio -> come ha consigliato Ilaria
+    spo2_conf = 0b01101100;
+    // conf_led_pulse[0] = 0x3F;
+    // conf_led_pulse[1] = 0x3F;
+    // modificare da 12mA a 6mA -> come ha consigliato Ilaria
+    conf_led_pulse[0] = 0x1F;
+    conf_led_pulse[1] = 0x1F;
     conf_led_pulse[2] = 0;
     conf_led_pulse[3] = 0;
     conf_multi_led[0] = 0b00010010;
@@ -840,8 +845,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     uint8_t prev_read_ptr_fifo = read_ptr_fifo;
     MAX30101_Read_Data(hr_data, raw_health, &read_ptr_fifo);
     if (prev_read_ptr_fifo != read_ptr_fifo) {
-      // IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
-      // IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
+      IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
+      IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
       // Send the accelerometer and gyroscope data via BLE
       // We are sending only the X-axis data
       //BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer);

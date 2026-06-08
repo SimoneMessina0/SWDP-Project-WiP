@@ -79,12 +79,12 @@ def process_bin_file(bin_filename, csv_filename=None):
                 acc_x_list.append(acc_x[0])
                 acc_y_list.append(acc_y[0])
                 acc_z_list.append(acc_z[0])
-                gyro_x_list.append(gx[0])
+                gyro_x_list.append(gx[0]) 
                 gyro_y_list.append(gy[0])
                 gyro_z_list.append(gz[0])
                 # PPG (MAX30101): two 24-bit big-endian values
-                ppg0 = int.from_bytes(subpkt[17:20], byteorder='big')
-                ppg1 = int.from_bytes(subpkt[20:23], byteorder='big')
+                ppg0 = int.from_bytes(subpkt[17:20], byteorder='big') >> 3  # shift di 3 per formato a 15 bit
+                ppg1 = int.from_bytes(subpkt[20:23], byteorder='big') >> 3  # shift di 3 per formato a 15 bit
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
 
