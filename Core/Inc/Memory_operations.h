@@ -20,8 +20,8 @@
 // #define BYTES_PER_SAMPLE 23 // 6 axis imu * 2 (acc and gyro)
 // #define SAMPLES_PER_PAGE 178 // 4096/BYTES_PER_SAMPLE rounded
 
-#define BYTES_PER_SAMPLE 11 // only health data
-#define SAMPLES_PER_PAGE 372 // 4096/BYTES_PER_SAMPLE rounded
+#define BYTES_PER_SAMPLE 23 // only health data
+#define SAMPLES_PER_PAGE 177 // 4096/BYTES_PER_SAMPLE rounded
 
 typedef struct bookmark
 {

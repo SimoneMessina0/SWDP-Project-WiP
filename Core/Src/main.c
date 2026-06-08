@@ -215,7 +215,7 @@ int main(void)
     uint8_t conf_fifo, conf_mode, spo2_conf, conf_led_pulse[LED_PULSE_N_REG], conf_multi_led[MULTI_LED_N_REG]; 
     conf_fifo = 0b01010000;
     conf_mode = 0b00000011;
-    spo2_conf = 0b01101110;
+    spo2_conf = 0b01101111;
     conf_led_pulse[0] = 0x3F;
     conf_led_pulse[1] = 0x3F;
     conf_led_pulse[2] = 0;
