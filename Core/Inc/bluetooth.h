@@ -21,8 +21,10 @@
 // --- Enumerations ---
 // This enum defines the possible types of data packets that can be sent.
 typedef enum {
-    DATA_TYPE_IMU_ACCELERATION, // Indicates acceleration data from an IMU
-    DATA_TYPE_IMU_GYROSCOPE     // Indicates gyroscope data from an IMU
+    DATA_TYPE_IMU_ACCELERATION,     // Indicates acceleration data from an IMU
+    DATA_TYPE_IMU_GYROSCOPE,        // Indicates gyroscope data from an IMU
+    DATA_TYPE_PPG,                  // Indicates temp data from an IMU
+    DATA_TYPE_TEMP                  // Indicates gyroscope data from an IMU
 } BLE_DataType;
 
 // --- Function Prototypes ---
@@ -36,6 +38,6 @@ void BLE_ExitLowPowerMode(void);
 void BLE_SetSlowAdvertisements(void);
 void BLE_SendData(uint8_t* data, uint8_t data_length);
 void BLE_ReceiveData(uint8_t* data, uint8_t data_length);
-void BLE_SendPacket(BLE_DataType ble_data_type, uint8_t* data_buffer);
+void BLE_SendPacket(BLE_DataType ble_data_type, uint8_t* data_buffer, uint8_t data_length);
 
 #endif /* INC_BLUETOOTH_H_ */

@@ -1,5 +1,6 @@
 #include "MAX30101_driver.h"
 #include "main.h"
+#include "stm32u5xx_hal.h"
 #include "string.h"
 #include "stdio.h"
 #include <stdint.h>
@@ -19,9 +20,13 @@ static uint8_t sensor_write_register(uint8_t reg_addr, uint8_t reg_data, uint8_t
  */
 uint8_t MAX30101_Init(void) {
     uint8_t pwr_rdy_value = 0;
-    // Read the WHO_AM_I register and check if the returned value matches the expected one
-    if (sensor_read_register(INTERRUPT_STATUS_1, &pwr_rdy_value, 1) && ((pwr_rdy_value & 1) == 0)) {
-        return 1; // Success
+    uint32_t start_tick = HAL_GetTick();
+    while(HAL_GetTick() - start_tick < 100){
+        // Read the WHO_AM_I register and check if the returned value matches the expected one
+        if (sensor_read_register(INTERRUPT_STATUS_1, &pwr_rdy_value, 1) && ((pwr_rdy_value & 1) == 0))
+            return 1; // Success
+
+        HAL_Delay(5);
     }
     return 0; // Failure
 }

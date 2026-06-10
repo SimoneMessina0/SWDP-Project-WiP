@@ -865,13 +865,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         skin_timer = 0;
       else skin_timer++;
 
-      // Send the accelerometer and gyroscope data via BLE
-      // We are sending only the X-axis data
-      //BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer);
-      //TODO: Change Gyro function
-      //BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, (uint32_t)gyroscope_data.x);
+      // BLE Data sending
+      BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer, sizeof(raw_accelerometer));
+      BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, raw_gyroscope, sizeof(raw_gyroscope));
+      BLE_SendPacket(DATA_TYPE_PPG, raw_health, sizeof(raw_health));
+      BLE_SendPacket(DATA_TYPE_TEMP, raw_temp, sizeof(raw_temp));
 
-      // Save the raw accelerometer and gyroscope data in memory
+      // Save the raw data in memory
       // Create timestamp with sampling frequency @100 Hz
       timestamp.sss=tim*10;
       if(timestamp.sss == 1000) {

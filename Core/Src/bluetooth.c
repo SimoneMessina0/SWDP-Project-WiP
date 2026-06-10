@@ -20,6 +20,7 @@
  */
 
 #include <bluetooth.h>
+#include "MAX30101_driver.h"
 #include "main.h"
 
 extern UART_HandleTypeDef huart3;
@@ -64,7 +65,7 @@ void BLE_Initialize(void) {
     enter_command_mode();
 
     // Set the device name for easy identification
-    uint8_t device_name[] = "CoccioGamer89\r";
+    uint8_t device_name[] = "SN,CoccioGamer89\r";
     BLE_SendData(device_name, sizeof(device_name) - 1);
     HAL_UART_Receive(&huart3, command_ok_response, sizeof(command_ok_response), UART_TIMEOUT); // Read 'AOK' response
 
@@ -224,7 +225,7 @@ void BLE_ReceiveData(uint8_t* data, uint8_t data_length) {
  * @param type The type of data being sent (e.g., acceleration, gyroscope).
  * @param value The 32-bit value to be sent.
  */
-void BLE_SendPacket(BLE_DataType ble_data_type, uint8_t* data_buffer) {
+void BLE_SendPacket(BLE_DataType ble_data_type, uint8_t* data_buffer, uint8_t data_length) {
     uint8_t ble_packet[PACKET_LENGTH];
 
     // Initialize the packet buffer
@@ -242,20 +243,24 @@ void BLE_SendPacket(BLE_DataType ble_data_type, uint8_t* data_buffer) {
         case DATA_TYPE_IMU_GYROSCOPE:
             ble_packet[1] = 'G';
             break;
+        case DATA_TYPE_PPG:
+            ble_packet[1] = 'P';
+            break;
+        case DATA_TYPE_TEMP:
+            ble_packet[1] = 'T';
+            break;
         default:
             ble_packet[1] = 'U'; // Unknown data type
             break;
     }
+    // Copy payload safely (limit to available packet space)
+    uint8_t max_payload = PACKET_LENGTH - 3; // bytes available starting at index 2
+    uint8_t copy_len = data_length;
+    if (copy_len > max_payload) copy_len = max_payload;
+    for (uint8_t i = 0; i < copy_len; i++) {
+        ble_packet[i + 2] = data_buffer[i];
+    }
 
-    // Bytes 2-4: The 32-bit value, packed in big-endian format
-    ble_packet[2] = data_buffer[0]; // X Axis LSB
-    ble_packet[3] = data_buffer[1]; // X Axis MSB
-    ble_packet[4] = data_buffer[2]; // Y Axis LSB
-    ble_packet[5] = data_buffer[3]; // Y Axis MSB
-    ble_packet[6] = data_buffer[4]; // Z Axis LSB
-    ble_packet[7] = data_buffer[5]; // Z Axis MSB
-
-    // Send the complete packet over UART
     BLE_SendData(ble_packet, sizeof(ble_packet));
 }
 
