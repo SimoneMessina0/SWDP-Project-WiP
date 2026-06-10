@@ -854,48 +854,45 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       conversion_status = true;
     }
     // Read sensor data from the IMU
-    uint8_t prev_read_ptr_fifo = read_ptr_fifo;
+    IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
+    IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
     MAX30101_Read_Data(hr_data, raw_health, &read_ptr_fifo);
-    if (prev_read_ptr_fifo != read_ptr_fifo) {
-      IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
-      IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
-      if(conversion_status)
-        MAX30205_Read_Temp(&skin_temp, raw_temp, conversion_status);
-      if(skin_timer == 500)
-        skin_timer = 0;
-      else skin_timer++;
+    if(conversion_status)
+      MAX30205_Read_Temp(&skin_temp, raw_temp, conversion_status);
+    if(skin_timer == 500)
+      skin_timer = 0;
+    else skin_timer++;
 
-      // BLE Data sending
-      BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer, sizeof(raw_accelerometer));
-      BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, raw_gyroscope, sizeof(raw_gyroscope));
-      BLE_SendPacket(DATA_TYPE_PPG, raw_health, sizeof(raw_health));
-      BLE_SendPacket(DATA_TYPE_TEMP, raw_temp, sizeof(raw_temp));
+    // BLE Data sending
+    BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer, sizeof(raw_accelerometer));
+    BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, raw_gyroscope, sizeof(raw_gyroscope));
+    BLE_SendPacket(DATA_TYPE_PPG, raw_health, sizeof(raw_health));
+    BLE_SendPacket(DATA_TYPE_TEMP, raw_temp, sizeof(raw_temp));
 
-      // Save the raw data in memory
-      // Create timestamp with sampling frequency @100 Hz
-      timestamp.sss=tim*10;
-      if(timestamp.sss == 1000) {
-        timestamp.ss=timestamp.ss+1;
-        timestamp.sss= 0;
-        tim = 0;
-        if (timestamp.ss==60){
-          timestamp.mm=timestamp.mm+1;
-          timestamp.ss=0;
-          if (timestamp.mm==60){
-            timestamp.hh=timestamp.hh+1;
-            timestamp.mm=0;
-          }
+    // Save the raw data in memory
+    // Create timestamp with sampling frequency @100 Hz
+    timestamp.sss=tim*10;
+    if(timestamp.sss == 1000) {
+      timestamp.ss=timestamp.ss+1;
+      timestamp.sss= 0;
+      tim = 0;
+      if (timestamp.ss==60){
+        timestamp.mm=timestamp.mm+1;
+        timestamp.ss=0;
+        if (timestamp.mm==60){
+          timestamp.hh=timestamp.hh+1;
+          timestamp.mm=0;
         }
       }
-
-      tim++;
-
-      // Create the data packet to be saved in memory
-      write_packet(sample, timestamp, raw_gyroscope, raw_accelerometer, raw_health , raw_temp, NAND_packet);
-      sample++;
-      // Write data packet in memory
-          write_memory();
     }
+
+    tim++;
+
+    // Create the data packet to be saved in memory
+    write_packet(sample, timestamp, raw_gyroscope, raw_accelerometer, raw_health , raw_temp, NAND_packet);
+    sample++;
+    // Write data packet in memory
+        write_memory();
 	}
 }
 
