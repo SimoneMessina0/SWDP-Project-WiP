@@ -12,6 +12,7 @@
 #include "main.h"
 #include "SPI.h"
 #include "SPI_NAND.h"
+#include <stdint.h>
 #include "Memory_operations.h"
 
 NAND_info data;
@@ -70,8 +71,10 @@ void erase_good_blocks(uint8_t *bad_blocks){
 	}
 }
 
-void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, uint8_t *accelerometer, uint8_t *health, uint8_t *NAND_packet){
+void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, uint8_t *accelerometer, uint8_t *health, uint8_t* temperature, uint8_t *NAND_packet){
 
+	uint8_t pkt_sub_id;
+	
 	NAND_packet[0 + (sample * BYTES_PER_SAMPLE)] = timestamp.hh;
 	NAND_packet[1 + (sample * BYTES_PER_SAMPLE)] = timestamp.mm;
 	NAND_packet[2 + (sample * BYTES_PER_SAMPLE)] = timestamp.ss;
@@ -84,15 +87,24 @@ void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, ui
 	NAND_packet[3 + (sample * BYTES_PER_SAMPLE)] = m[0];
 	NAND_packet[4 + (sample * BYTES_PER_SAMPLE)] = m[1];
 
+	pkt_sub_id = 5;
+
 	for (uint8_t i = 0; i < 6; i++){
-		NAND_packet[5 + i + (sample * BYTES_PER_SAMPLE)] = accelerometer[i];
+		NAND_packet[pkt_sub_id + i + (sample * BYTES_PER_SAMPLE)] = accelerometer[i];
 	}
+	pkt_sub_id+= 6;
 	for (uint8_t i = 0; i < 6; i++){
-		NAND_packet[11 + i + (sample * BYTES_PER_SAMPLE)] = gyroscope[i];
+		NAND_packet[pkt_sub_id + i + (sample * BYTES_PER_SAMPLE)] = gyroscope[i];
 	}
+	pkt_sub_id+= 6;
 	for (uint8_t i = 0; i < 3 * NUMBER_OF_ACTIVE_LEDS; i++){
-		NAND_packet[17 + i + (sample * BYTES_PER_SAMPLE)] = health[i];
+		NAND_packet[pkt_sub_id + i + (sample * BYTES_PER_SAMPLE)] = health[i];
 	}
+	pkt_sub_id+= 3 * NUMBER_OF_ACTIVE_LEDS;
+	for (uint8_t i = 0; i < 2; i++){
+		NAND_packet[pkt_sub_id + i + (sample * BYTES_PER_SAMPLE)] = temperature[i];
+	}
+
 	
 
 }

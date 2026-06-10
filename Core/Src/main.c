@@ -94,8 +94,13 @@ uint8_t raw_accelerometer[6] = {0};
 uint8_t raw_gyroscope[6] = {0};
 // Health data
 static HEALTH_data hr_data[NUMBER_OF_ACTIVE_LEDS][32];
+static float skin_temp;
 
 uint8_t raw_health[3 * NUMBER_OF_ACTIVE_LEDS * 32] = {0};
+uint8_t raw_temp[2];
+
+uint16_t skin_timer = 0;
+bool     conversion_status = 0;
 
 uint8_t read_ptr_fifo;
 
@@ -230,18 +235,22 @@ int main(void)
     MAX30101_Mode_Config(conf_fifo, conf_mode, spo2_conf);
     MAX30101_LED_Config(conf_led_pulse, conf_multi_led);
   } else {
-	LED_Toggle(LED_RED);
-	HAL_Delay(500);
-	LED_Toggle(LED_GREEN);
-	HAL_Delay(500);
-	LED_Toggle(LED_RED);
-	HAL_Delay(500);
-	LED_Toggle(LED_GREEN);
-	HAL_Delay(500);
-	LED_Toggle(LED_RED);
-	HAL_Delay(500);
-	LED_Toggle(LED_GREEN);
-	HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_GREEN);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_GREEN);
+    HAL_Delay(500);
+    LED_Toggle(LED_RED);
+    HAL_Delay(500);
+    LED_Toggle(LED_GREEN);
+    HAL_Delay(500);
+  }
+
+  {
+    MAX30205_Init();
   }
 
   // Turn off the red LED to indicate that initialization is complete
@@ -840,13 +849,22 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim == &htim2){
-
+    if(skin_timer == 0){
+      MAX30205_Start_Conversion();
+      conversion_status = true;
+    }
     // Read sensor data from the IMU
     uint8_t prev_read_ptr_fifo = read_ptr_fifo;
     MAX30101_Read_Data(hr_data, raw_health, &read_ptr_fifo);
     if (prev_read_ptr_fifo != read_ptr_fifo) {
       IMU_ReadAccelerometerData(&accelerometer_data, raw_accelerometer);
       IMU_ReadGyroscopeData(&gyroscope_data, raw_gyroscope);
+      if(conversion_status)
+        MAX30205_Read_Temp(&skin_temp, raw_temp, conversion_status);
+      if(skin_timer == 500)
+        skin_timer = 0;
+      else skin_timer++;
+
       // Send the accelerometer and gyroscope data via BLE
       // We are sending only the X-axis data
       //BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer);
@@ -873,7 +891,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       tim++;
 
       // Create the data packet to be saved in memory
-      write_packet(sample, timestamp, raw_gyroscope, raw_accelerometer, raw_health , NAND_packet);
+      write_packet(sample, timestamp, raw_gyroscope, raw_accelerometer, raw_health , raw_temp, NAND_packet);
       sample++;
       // Write data packet in memory
           write_memory();
@@ -898,6 +916,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 				erase_memory();
 				current_state = STATE_ACQUISITION;
         MAX30101_Reset();
+        skin_timer = 0;
 				HAL_TIM_Base_Start_IT(&htim2); // Start the timer for periodic data reading
 				LED_On(LED_GREEN); // Provide visual feedback for starting acquisition
         LED_On(LED_RED);

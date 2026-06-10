@@ -43,11 +43,12 @@ def process_bin_file(bin_filename, csv_filename=None):
     acc_x_list, acc_y_list, acc_z_list = [], [], []
     gyro_x_list, gyro_y_list, gyro_z_list = [], [], []
     ppg0_list, ppg1_list = [], []
+    temp_list = []
 
     # Each NAND page is sent as 4096 bytes. We ignore the last 16 spare bytes
     # and parse subpackets. Each sample contains: 5 bytes timestamp, 6 bytes
     # accelerometer, 6 bytes gyroscope, 6 bytes MAX30101 (3 bytes per LED)
-    SUBPKT_SIZE = 23
+    SUBPKT_SIZE = 25
     with open(bin_filename, "rb") as f:
         while True:
             pagina = f.read(4096)
@@ -85,8 +86,10 @@ def process_bin_file(bin_filename, csv_filename=None):
                 # PPG (MAX30101): two 24-bit big-endian values
                 ppg0 = int.from_bytes(subpkt[17:20], byteorder='big') >> 3  # shift di 3 per formato a 15 bit
                 ppg1 = int.from_bytes(subpkt[20:23], byteorder='big') >> 3  # shift di 3 per formato a 15 bit
+                temp = int.from_bytes(subpkt[23:25], byteorder='big')
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
+                temp_list.append(temp)
 
     # crea DataFrame
     df = pd.DataFrame({
@@ -101,7 +104,8 @@ def process_bin_file(bin_filename, csv_filename=None):
         "gyro_y": gyro_y_list,
         "gyro_z": gyro_z_list,
         "ppg_led0": ppg0_list,
-        "ppg_led1": ppg1_list
+        "ppg_led1": ppg1_list,
+        "skin_temperature": [temp * 0.00390625 for temp in temp_list]
     })
 
     # plot accelerometro
@@ -142,6 +146,17 @@ def process_bin_file(bin_filename, csv_filename=None):
     axs[1].legend()
     axs[0].grid(True)
     axs[1].grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # plot skin temperature (MAX30205)
+    plt.figure(figsize=(15,5))
+    plt.plot(df.index, df["skin_temperature"], label="skin_temperature", color="tab:red")
+    plt.title("Skin Temperature")
+    plt.xlabel("Subpacket index")
+    plt.ylabel("°C")
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
     plt.show()
 

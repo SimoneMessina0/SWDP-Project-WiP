@@ -20,8 +20,8 @@
 // #define BYTES_PER_SAMPLE 23 // 6 axis imu * 2 (acc and gyro)
 // #define SAMPLES_PER_PAGE 178 // 4096/BYTES_PER_SAMPLE rounded
 
-#define BYTES_PER_SAMPLE 23 // only health data
-#define SAMPLES_PER_PAGE 177 // 4096/BYTES_PER_SAMPLE rounded
+#define BYTES_PER_SAMPLE 25 // only health data
+#define SAMPLES_PER_PAGE 163 // 4096/BYTES_PER_SAMPLE rounded
 
 typedef struct bookmark
 {
@@ -43,5 +43,5 @@ void erase_good_blocks(uint8_t *bad_blocks);
 NAND_info read_memory(int b, NAND_info indice, uint16_t *blocco_letto, uint8_t *pagina_letta, uint16_t bad_blocks[2048], uint8_t *data_letto);
 void write_info(NAND_info segnalibro, uint16_t bad_blocks[2048]);
 NAND_info read_info(uint16_t bad_blocks[2048]);
-void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, uint8_t *accelerometer, uint8_t *health, uint8_t *NAND_packet);
+void write_packet(uint16_t sample, Time_Struct timestamp, uint8_t *gyroscope, uint8_t *accelerometer, uint8_t *health, uint8_t* temperature, uint8_t *NAND_packet);
 #endif /* INC_MEMORY_OPERATIONS_H_ */
