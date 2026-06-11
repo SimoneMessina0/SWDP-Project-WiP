@@ -37,6 +37,7 @@
 #include "MAX30101_driver.h"
 #include "MAX30205_driver.h"
 #include "bluetooth.h"
+#include "ppg_filter.h"
 #include <stdint.h>
 
 /* USER CODE END Includes */
@@ -192,10 +193,12 @@ int main(void)
 
   // Initialize all hardware peripherals (ble, usb, nand flash, imu)
   BLE_Initialize();
+  PPG_Filter_Init();
   MX_USB_Device_Init();
   HAL_Delay(1000);
 
   spi_nand_init();
+  memset(bad_blocks, 0xFF, sizeof(bad_blocks)); // correctly init all elements to 0xFFFF
   find_bad_blocks(bad_blocks); // find bad_blocks and save them
 
   if(IMU_Init() == 1) {
@@ -863,11 +866,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       skin_timer = 0;
     else skin_timer++;
 
-    // BLE Data sending
-    BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer, sizeof(raw_accelerometer));
-    BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, raw_gyroscope, sizeof(raw_gyroscope));
-    BLE_SendPacket(DATA_TYPE_PPG, raw_health, sizeof(raw_health));
-    BLE_SendPacket(DATA_TYPE_TEMP, raw_temp, sizeof(raw_temp));
+    // BLE Data sending: Individual Packets (decimated by 2 to prevent BLE over-the-air buffer overflow)
+    static uint8_t ble_decimation_counter = 0;
+    ble_decimation_counter++;
+    if (ble_decimation_counter >= 2) {
+        ble_decimation_counter = 0;
+
+        // Extract IR from SLOT2 (index 1) and filter it
+        uint8_t last_sample_idx = (read_ptr_fifo + 31) % 32;
+        float32_t ppg_filtered_ir = PPG_Filter_ProcessSample((float32_t)hr_data[1][last_sample_idx]);
+
+        BLE_SendPacket(DATA_TYPE_IMU_ACCELERATION, raw_accelerometer, 6);
+        BLE_SendPacket(DATA_TYPE_IMU_GYROSCOPE, raw_gyroscope, 6);
+        BLE_SendPacket(DATA_TYPE_PPG, (uint8_t*)&ppg_filtered_ir, sizeof(float32_t));
+        BLE_SendPacket(DATA_TYPE_TEMP, raw_temp, 2);
+    }
 
     // Save the raw data in memory
     // Create timestamp with sampling frequency @100 Hz
@@ -911,6 +924,10 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 			case STATE_IDLE:
 				// If the device is idle, start data acquisition.
 				erase_memory();
+				sample = 0;
+				pagina_scritta = 0;
+				b = 0;
+				memset(NAND_packet, 0, sizeof(NAND_packet));
 				current_state = STATE_ACQUISITION;
         MAX30101_Reset();
         skin_timer = 0;

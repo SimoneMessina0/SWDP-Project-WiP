@@ -23,6 +23,51 @@ def conv_gyro(arr):
     z = convert_16bit_signed(arr[:,4], arr[:,5]) / (2**15) * 250
     return x, y, z
 
+def apply_filter(signal):
+    """
+    Applies the 2-stage Direct Form I Biquad Cascade filter to the input signal.
+    Stage 1: 2nd-order Butterworth LPF (fc = 5.0 Hz, fs = 100.0 Hz)
+    Stage 2: 2nd-order Butterworth HPF (fc = 0.5 Hz, fs = 100.0 Hz)
+    """
+    # Stage 1 (LPF: 5 Hz) coefficients
+    b0_1, b1_1, b2_1 = 0.020083366, 0.040166732, 0.020083366
+    a1_1, a2_1 = 1.561018076, -0.641351538
+    
+    # Stage 2 (HPF: 0.5 Hz) coefficients
+    b0_2, b1_2, b2_2 = 0.978030510, -1.956061020, 0.978030510
+    a1_2, a2_2 = 1.955578394, -0.956543626
+    
+    n = len(signal)
+    output = np.zeros(n)
+    
+    # Stage 1 states (Direct Form I: x[n-1], x[n-2], y[n-1], y[n-2])
+    s1_x1, s1_x2 = 0.0, 0.0
+    s1_y1, s1_y2 = 0.0, 0.0
+    
+    # Stage 2 states
+    s2_x1, s2_x2 = 0.0, 0.0
+    s2_y1, s2_y2 = 0.0, 0.0
+    
+    for i in range(n):
+        # Stage 1
+        x = float(signal[i])
+        y1 = b0_1 * x + b1_1 * s1_x1 + b2_1 * s1_x2 + a1_1 * s1_y1 + a2_1 * s1_y2
+        s1_x2 = s1_x1
+        s1_x1 = x
+        s1_y2 = s1_y1
+        s1_y1 = y1
+        
+        # Stage 2
+        y2 = b0_2 * y1 + b1_2 * s2_x1 + b2_2 * s2_x2 + a1_2 * s2_y1 + a2_2 * s2_y2
+        s2_x2 = s2_x1
+        s2_x1 = y1
+        s2_y2 = s2_y1
+        s2_y1 = y2
+        
+        output[i] = y2
+        
+    return output
+
 def receive_and_save_data(ser, bin_filename, packet_size=4096, max_packets=2048*64):
     """Riceve pacchetti via seriale e li salva in binario."""
     with open(bin_filename, 'wb') as f:
@@ -74,6 +119,10 @@ def process_bin_file(bin_filename, csv_filename=None):
                 ppg0_list.append(ppg0)
                 ppg1_list.append(ppg1)
 
+    # apply bandpass filter
+    ppg0_filtered = apply_filter(ppg0_list)
+    ppg1_filtered = apply_filter(ppg1_list)
+
     # crea DataFrame
     df = pd.DataFrame({
         "hh": hh_list,
@@ -81,18 +130,32 @@ def process_bin_file(bin_filename, csv_filename=None):
         "ss": ss_list,
         "sss": sss_list,
         "ppg_led0": ppg0_list,
-        "ppg_led1": ppg1_list
+        "ppg_led0_filtered": ppg0_filtered,
+        "ppg_led1": ppg1_list,
+        "ppg_led1_filtered": ppg1_filtered
     })
 
-    # plot PPG (MAX30101)
-    plt.figure(figsize=(12,6))
-    plt.plot(df.index, df["ppg_led0"], label="ppg_led0")
-    plt.plot(df.index, df["ppg_led1"], label="ppg_led1")
-    plt.title("MAX30101 PPG")
-    plt.xlabel("Subpacket index")
-    plt.ylabel("Raw 24-bit value")
-    plt.legend()
-    plt.grid(True)
+    # plot PPG (MAX30101) - Raw vs Filtered
+    fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(12, 8))
+    
+    # Raw signals
+    axs[0].plot(df.index, df["ppg_led0"], label="ppg_led0 (raw)", color="tab:blue")
+    axs[0].plot(df.index, df["ppg_led1"], label="ppg_led1 (raw)", color="tab:orange")
+    axs[0].set_title("MAX30101 PPG - Raw")
+    axs[0].set_ylabel("Raw value")
+    axs[0].legend()
+    axs[0].grid(True)
+
+    # Filtered signals
+    axs[1].plot(df.index, df["ppg_led0_filtered"], label="ppg_led0 (filtered)", color="tab:blue")
+    axs[1].plot(df.index, df["ppg_led1_filtered"], label="ppg_led1 (filtered)", color="tab:orange")
+    axs[1].set_title("MAX30101 PPG - Filtered")
+    axs[1].set_xlabel("Subpacket index")
+    axs[1].set_ylabel("Filtered value")
+    axs[1].legend()
+    axs[1].grid(True)
+
+    fig.suptitle("MAX30101 PPG Data Analysis")
     plt.tight_layout()
     plt.show()
 

@@ -323,14 +323,14 @@ int spi_write_read(const uint8_t *write_buff, uint8_t *read_buff, size_t transfe
 }
 
 void spi_nand_page_program_chunk(read_address_t row, column_address_t column,const uint8_t *data_in,size_t chunk ){
-
-	spi_nand_page_program(row, column, data_in, chunk);
-	column = chunk;
-	spi_nand_page_program(row, column, data_in+column, chunk);
-	column = column+chunk;
-	spi_nand_page_program(row, column, data_in+column, chunk);
-	column = column+chunk;;
-	spi_nand_page_program(row, column, data_in+column, chunk);
+	uint16_t offset = 0;
+	spi_nand_page_program(row, column + offset, data_in + offset, chunk);
+	offset += chunk;
+	spi_nand_page_program(row, column + offset, data_in + offset, chunk);
+	offset += chunk;
+	spi_nand_page_program(row, column + offset, data_in + offset, chunk);
+	offset += chunk;
+	spi_nand_page_program(row, column + offset, data_in + offset, chunk);
 }
 
 int spi_nand_page_program(read_address_t row, column_address_t column, const uint8_t *data_in,
@@ -621,9 +621,10 @@ feature_reg_status_t poll_for_oip_clear(uint32_t timeout)
 	 *  */
 
 	uint8_t data=0;
-	feature_reg_status_t status_out;
-    for (;;) { // INFINITE CYCLE
-    	 //int ret = get_feature(FEATURE_REG_STATUS, &status_out->whole, timeout);
+	feature_reg_status_t status_out = {0};
+	uint32_t retries = 50000; // ample retries for page program / block erase
+
+    while (retries > 0) {
     	data = get_feature(FEATURE_REG_STATUS, timeout);
 
     	status_out.OIP = data & 0b00000001;
@@ -632,14 +633,16 @@ feature_reg_status_t poll_for_oip_clear(uint32_t timeout)
 		status_out.P_FAIL = (data & 0b00001000)>>3;
 		status_out.ECCS0_3 = (data & 0b01110000)>>4;
 		status_out.CRBSY = 	(data & 0b10000000)>>7;
-    	 //if (SPI_NAND_RET_OK != ret) {
-           // return ret;
-        //}
+
         // check for OIP clear
         if (0 == status_out.OIP) {
             return status_out;
         }
+        retries--;
     }
+
+    status_out.E_FAIL = 1;
+    return status_out;
 }
 
 
@@ -727,12 +730,19 @@ void write_memory()
 			b++;
 		}
 
-		if(b==2048){ // memory full
+		if(b >= 2048){ // memory full
 			current_state = STATE_IDLE;
+			return;
 		}
 
 		// write 1 page at the time
 		blocco_scritto = bad_blocks[b];
+		
+		if (blocco_scritto == 0xFFFF) { // Reached end of good blocks array
+			current_state = STATE_IDLE;
+			return;
+		}
+		
 		blocco.block = blocco_scritto;
 		blocco.page = pagina_scritta;
 		blocco.dummy = 0;
@@ -750,6 +760,13 @@ void write_memory()
 void read_memory_and_transmit()
 {
 		for(int bloc = 0; bloc < 2048; bloc++) { // Cycle on all the memory blocks (2048)
+			if (bad_blocks[bloc] == 0xFFFF) { // End of good blocks
+				current_state = STATE_USB_CONNECTED;
+				uint8_t buffer[1] = { 'T' };
+				CDC_Transmit_FS(buffer, sizeof(buffer));
+				return;
+			}
+			
 			if(exit_flag == 0){
 			blocco.block = bad_blocks[bloc]; // Read only good blocks
 
@@ -768,7 +785,7 @@ void read_memory_and_transmit()
 				CDC_Transmit_FS(buffer, sizeof(buffer));  // Send 1 byte: 'T'
 
 				exit_flag = 1;
-				break; // exit cycle
+				return; // exit immediately
 			}
 
 			CDC_Transmit_FS(data_letto, sizeof(data_letto)); // Send data via USB

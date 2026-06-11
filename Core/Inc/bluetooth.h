@@ -24,7 +24,8 @@ typedef enum {
     DATA_TYPE_IMU_ACCELERATION,     // Indicates acceleration data from an IMU
     DATA_TYPE_IMU_GYROSCOPE,        // Indicates gyroscope data from an IMU
     DATA_TYPE_PPG,                  // Indicates temp data from an IMU
-    DATA_TYPE_TEMP                  // Indicates gyroscope data from an IMU
+    DATA_TYPE_TEMP,                 // Indicates gyroscope data from an IMU
+    DATA_TYPE_COMBINED              // Combined sensor data
 } BLE_DataType;
 
 // --- Function Prototypes ---

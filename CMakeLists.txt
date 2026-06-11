@@ -59,6 +59,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/USB_Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/MAX30101_driver.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/MAX30205_driver.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/ppg_filter.c
     # Add user defined sources
 )
 

@@ -203,6 +203,7 @@ void BLE_SetSlowAdvertisements(void) {
  * @param data_length The number of bytes to send.
  */
 void BLE_SendData(uint8_t* data, uint8_t data_length) {
+    __HAL_UART_CLEAR_FLAG(&huart3, UART_CLEAR_OREF | UART_CLEAR_NEF | UART_CLEAR_FEF | UART_CLEAR_PEF);
     HAL_UART_Transmit(&huart3, data, data_length, UART_TIMEOUT);
 }
 
@@ -248,6 +249,9 @@ void BLE_SendPacket(BLE_DataType ble_data_type, uint8_t* data_buffer, uint8_t da
             break;
         case DATA_TYPE_TEMP:
             ble_packet[1] = 'T';
+            break;
+        case DATA_TYPE_COMBINED:
+            ble_packet[1] = 'C';
             break;
         default:
             ble_packet[1] = 'U'; // Unknown data type
